@@ -1,0 +1,52 @@
+# =============================
+# Python / FastAPI base project
+# =============================
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment & secrets
+.env
+*.env
+
+# Logs / Databases
+*.log
+*.db
+*.sqlite3
+
+# Cache / testing
+pytest_cache/
+.mypy_cache/
+.tox/
+coverage/
+htmlcov/
+
+# Build / dist
+build/
+dist/
+*.egg-info/
+*.egg
+
+# IDE / Editor
+.vscode/
+.idea/
+*.code-workspace
+
+# Docker / Compose
+docker-compose.override.yml
+*.pid
+*.pid.lock
+
+# Alembic migration versions
+alembic/versions/
+
+# System files
+.DS_Store
+Thumbs.db
