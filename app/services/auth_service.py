@@ -3,38 +3,26 @@ from app.models.user import User
 from app.schemas.user import UserCreate,UserLogin
 from app.core.security import hash_password, verify_password, create_access_token
 from datetime import datetime, timedelta
-from fastapi import HTTPException, status
 from app.core.config import settings
 from app.utils.cookie_utils import set_refresh_token_cookie
-
+from fastapi import HTTPException, status, Response
+from app.repositories import user_repo
 def register_user(db: Session, user_in: UserCreate) -> User:
     print("Password type:", type(user_in.password), "value:", user_in.password)
 
-    existing_user = db.query(User).filter(User.email == user_in.email).first()
+    existing_user = user_repo.get_user_by_email(db, user_in.email)
     if existing_user:
         raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail="Email already registered")
     
+    print("Password type:", type(user_in.password), "value:", repr(user_in.password))
+
     hashed_pw = hash_password(user_in.password)
-    new_user = User(email=user_in.email, full_name= user_in.full_name, hashed_password=hashed_pw)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    new_user = user_repo.create_user(db, email=user_in.email, password_hash=hashed_pw, full_name=user_in.full_name)
     return new_user
 
 
-
-from fastapi import HTTPException, status, Response
-from sqlalchemy.orm import Session
-from datetime import timedelta
-from app.models.user import User
-from app.schemas.user import UserLogin
-from app.core.security import verify_password, create_access_token
-from app.utils.cookie_utils import set_refresh_token_cookie
-from app.core.config import settings
-
-
 def login_user(db: Session, user_in: UserLogin, response: Response):
-    user = db.query(User).filter(User.email == user_in.email).first()
+    user = user_repo.get_user_by_email(db, user_in.email)
 
     if not user or not verify_password(user_in.password, user.hashed_password):
         raise HTTPException(

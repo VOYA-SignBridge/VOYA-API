@@ -3,10 +3,10 @@ FROM python:3.11-slim
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt || cat /root/.pip/pip.log
+
 
 COPY ./app ./app
-COPY .env .env
 
 EXPOSE 8000
 

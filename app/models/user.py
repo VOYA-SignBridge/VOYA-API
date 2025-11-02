@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from app.db.database import Base
-
+from datetime import datetime
 class User(Base):
     __tablename__ = "users"
 
@@ -9,3 +9,4 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=True)
     role = Column(String(50), default="normal")  # 'normal' hoặc 'disabled'
+    created_at = Column(String, default=datetime.utcnow)

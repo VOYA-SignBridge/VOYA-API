@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int
     refresh_token_expire_days: int
     database_url: str
+    redis_url: str
 
     class Config:
         env_file = ".env"
