@@ -11,3 +11,6 @@ class Friendship(Base):
     friend_id = Column(Integer, ForeignKey("users.id"))
     status = Column(String(20), default="accepted")  # pending / accepted / blocked
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", foreign_keys=[user_id])
+    friend = relationship("User", foreign_keys=[friend_id])

@@ -1,52 +1,46 @@
+from datetime import timedelta
+from fastapi import HTTPException, Response
 from sqlalchemy.orm import Session
-from app.models.user import User
-from app.schemas.user import UserCreate,UserLogin
+from app.repositories.user_repo import UserRepository
 from app.core.security import hash_password, verify_password, create_access_token
-from datetime import datetime, timedelta
 from app.core.config import settings
 from app.utils.cookie_utils import set_refresh_token_cookie
-from fastapi import HTTPException, status, Response
-from app.repositories import user_repo
-def register_user(db: Session, user_in: UserCreate) -> User:
-    print("Password type:", type(user_in.password), "value:", user_in.password)
-
-    existing_user = user_repo.get_user_by_email(db, user_in.email)
-    if existing_user:
-        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail="Email already registered")
-    
-    print("Password type:", type(user_in.password), "value:", repr(user_in.password))
-
-    hashed_pw = hash_password(user_in.password)
-    new_user = user_repo.create_user(db, email=user_in.email, password_hash=hashed_pw, full_name=user_in.full_name)
-    return new_user
 
 
-def login_user(db: Session, user_in: UserLogin, response: Response):
-    user = user_repo.get_user_by_email(db, user_in.email)
+class AuthService:
+    def __init__(self, db: Session):
+        self.db = db
+        self.repo = UserRepository(db)
 
-    if not user or not verify_password(user_in.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+    def register(self, user_in):
+        existing_user = self.repo.get_user_by_email(user_in.email)
+        if existing_user:
+            raise HTTPException(400, "Email already registered")
+
+        hashed_pw = hash_password(user_in.password)
+        return self.repo.create_user(
+            email=user_in.email,
+            password_hash=hashed_pw,
+            full_name=user_in.full_name
         )
 
-    if user.role == "disabled":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User account is disabled"
+    def login(self, user_in, response: Response):
+        user = self.repo.get_user_by_email(user_in.email)
+        if not user or not verify_password(user_in.password, user.hashed_password):
+            raise HTTPException(401, "Invalid credentials")
+
+        if user.role == "disabled":
+            raise HTTPException(403, "User disabled")
+
+        access_token = create_access_token(
+            {"sub": user.email},
+            timedelta(minutes=settings.access_token_expire_minutes)
         )
 
-    # Access token (ngắn hạn)
-    access_token = create_access_token(
-        data={"sub": user.email},
-        expires_delta=timedelta(minutes=settings.access_token_expire_minutes)
-    )
+        refresh_token = create_access_token(
+            {"sub": user.email},
+            timedelta(days=settings.refresh_token_expire_days)
+        )
+        set_refresh_token_cookie(response, refresh_token)
 
-    # Refresh token (dài hạn)
-    refresh_token = create_access_token(
-        data={"sub": user.email},
-        expires_delta=timedelta(days=settings.refresh_token_expire_days)
-    )
-
-    # Gắn refresh token vào cookie HTTP-only
-    set_refresh_token_cookie(response, token=refresh_token)
-
-    return {"access_token": access_token, "token_type": "bearer"}
+        return {"access_token": access_token, "token_type": "bearer"}

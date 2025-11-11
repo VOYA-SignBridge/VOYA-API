@@ -11,7 +11,9 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int
     database_url: str
     redis_url: str
-
+    supabase_jwt_secret: str
+    supabase_project_id: str
+    supabase_jwks_url: str
     class Config:
         env_file = ".env"
 

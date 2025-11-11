@@ -1,13 +1,22 @@
-from sqlalchemy.orm import Session
+# app/repositories/user_repo.py
 from app.models.user import User
 
+class UserRepository:
+    def __init__(self, db):
+        self.db = db
 
-def get_user_by_email(db: Session, email: str) -> User:
-    return db.query(User).filter(User.email == email).first()
+    def get_by_supabase_id(self, supabase_id: str):
+        return self.db.query(User).filter(User.supabase_id == supabase_id).first()
 
-def create_user(db: Session, email: str, password_hash: str, full_name: str):
-    new_user = User(email=email, full_name=full_name, hashed_password=password_hash)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+    def create_from_supabase(self, supabase_id: str, email: str, full_name: str):
+        user = User(
+            supabase_id=supabase_id,
+            email=email,
+            full_name=full_name,
+            hashed_password="",   # Supabase quản lý, backend để trống
+            role="normal"
+        )
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
