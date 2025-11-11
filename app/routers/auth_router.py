@@ -11,6 +11,7 @@ from datetime import timedelta
 from app.core.config import settings
 from app.models.user import User
 from app.core.dependencies import get_current_user
+from fastapi.security import OAuth2PasswordRequestForm
 
 router= APIRouter(prefix="/auth", tags=["AUTHENTICATION SERVICE"])
 
@@ -28,14 +29,22 @@ def read_current_user(current_user: User = Depends(get_current_user)):
 def register(user_in: UserCreate, db: Session= Depends(get_db)):
     return register_user(db, user_in)
 
+# @router.post("/login")
+# def login(
+#     user_in: UserLogin,
+#     response: Response,
+#     db: Session = Depends(get_db)
+# ):
+#     return login_user(db, user_in, response)
+
 @router.post("/login")
 def login(
-    user_in: UserLogin,
     response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
+    user_in = UserLogin(email=form_data.username, password=form_data.password)
     return login_user(db, user_in, response)
-
 
 
 
