@@ -23,9 +23,7 @@ async def room_ws(
     display_name: str | None = None,
     db: Session = Depends(get_db)
 ):
-    # -------------------
     # 1. Extract token from subprotocol
-    # -------------------
     subproto = websocket.headers.get("sec-websocket-protocol")
 
     if not subproto:
@@ -40,9 +38,7 @@ async def room_ws(
     if not token:
         return await websocket.close(code=4403, reason="Missing token")
 
-    # -------------------
     # 2. Verify JWT
-    # -------------------
     try:
         payload = verify_supabase_jwt(token)
     except:
@@ -50,9 +46,7 @@ async def room_ws(
 
     user_id = payload["sub"]
 
-    # -------------------
     # 3. Validate parameters
-    # -------------------
     if not participant_id:
         return await websocket.close(code=4401, reason="Missing participant_id")
 
@@ -60,21 +54,15 @@ async def room_ws(
     if not room_repo.get_room_by_code(code):
         return await websocket.close(code=4404, reason="Room not found")
 
-    # -------------------
     # 4. Accept WS ONCE with subprotocol
-    # -------------------
     await websocket.accept(subprotocol="jwt")
 
-    # -------------------
     # 5. Save connection
-    # -------------------
     ROOM_CONN.setdefault(code, {})[participant_id] = websocket
 
     print(f"[WS CONNECT] room={code}, user={user_id}, pid={participant_id}")
 
-    # -------------------
     # 6. Broadcast join via Redis
-    # -------------------
     await redis_client.publish(
         f"room:{code}",
         json.dumps({
@@ -86,9 +74,7 @@ async def room_ws(
         })
     )
 
-    # -------------------
     # 7. Create a single Redis listener per room
-    # -------------------
     if code not in ROOM_LISTENERS:
         print(f"START LISTENER for room {code}")
 
@@ -112,9 +98,7 @@ async def room_ws(
 
         ROOM_LISTENERS[code] = asyncio.create_task(listen_redis())
 
-    # -------------------
     # 8. WS message loop
-    # -------------------
     try:
         while True:
             raw = await websocket.receive_text()
