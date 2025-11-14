@@ -1,8 +1,8 @@
-# app/repositories/user_repo.py
+from sqlalchemy.orm import Session
 from app.models.user import User
 
 class UserRepository:
-    def __init__(self, db):
+    def __init__(self, db: Session):
         self.db = db
 
     def get_by_supabase_id(self, supabase_id: str):

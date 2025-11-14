@@ -55,16 +55,19 @@ def verify_supabase_jwt(access_token: str):
         raise HTTPException(status_code=401, detail=f"JWT verification failed: {e}")
 
 
-    
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # ✅ skip authentication cho các route public
-        if path in PUBLIC_PATHS or path.startswith("/static"):
+        # ---- Skip authentication for API docs, static, WS ----
+        if (
+            path in PUBLIC_PATHS 
+            or path.startswith("/static")
+            or path.startswith("/ws/")
+        ):
             return await call_next(request)
 
-        # ✅ lấy Authorization header
+        # ---- Normal HTTP auth ----
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
@@ -74,7 +77,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         try:
             payload = verify_supabase_jwt(token)
             request.state.user = payload
+            # print("payload =", payload)
         except Exception as e:
-            raise HTTPException(status_code=401, detail=str(e))
+            print("TOKEN RECEIVED:", token[:20], "...", len(token))
+            print("VERIFY ERROR:", e)
+            raise HTTPException(status_code=401, detail="Invalid JWT")
 
         return await call_next(request)

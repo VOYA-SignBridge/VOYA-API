@@ -3,14 +3,14 @@ import json
 from app.db.database import get_db
 from app.repositories.message_repo import MessageRepository
 from app.core.redis_client import redis_client
-from app.services.call_service import CallService
+from app.services.room_service import RoomService
 from app.services.ai.ai_sign2text_service import predict_sign2text
 
 router = APIRouter(prefix="/ws", tags=["Chat"])
 
 chat_connection = {}
 call_connection = {}
-call_service = CallService()
+call_service = RoomService()
 
 # @router.websocket("/chat/{user_id}")
 # async def websocket_endpoint(websocket: WebSocket, user_id: int, db= Depends(get_db)):
@@ -49,19 +49,19 @@ call_service = CallService()
 
 
 
-@router.websocket("/call/{user_id}")
-async def call_websocket_endpoint(websocket: WebSocket, user_id: int):
-    await call_service.connect_user(user_id, websocket)
+# @router.websocket("/call/{user_id}")
+# async def call_websocket_endpoint(websocket: WebSocket, user_id: int):
+#     await call_service.connect_user(user_id, websocket)
 
-    try:
-        while True:
-            data = await websocket.receive_text()
-            msg = json.loads(data)
-            await call_service.handle_message(user_id, msg)
-    except WebSocketDisconnect:
-        await call_service.disconnect_user(user_id)
+#     try:
+#         while True:
+#             data = await websocket.receive_text()
+#             msg = json.loads(data)
+#             await call_service.handle_message(user_id, msg)
+#     except WebSocketDisconnect:
+#         await call_service.disconnect_user(user_id)
 
 
-@router.websocket("/sign2text/{user_id}")
-async def sign2text_websocket_endpoint(websocket: WebSocket, user_id: int):
-    await call_service.handle_sign2text(user_id, websocket)
+# @router.websocket("/sign2text/{user_id}")
+# async def sign2text_websocket_endpoint(websocket: WebSocket, user_id: int):
+#     await call_service.handle_sign2text(user_id, websocket)
