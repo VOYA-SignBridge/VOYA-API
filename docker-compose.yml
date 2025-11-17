@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   backend:
     build: .
@@ -9,9 +7,13 @@ services:
     env_file:
       - .env
     volumes:
-      - ./app:/app/app
+      - .:/app
     depends_on:
       - db
+      - redis
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Ho_Chi_Minh
 
   db:
     image: postgres:15
@@ -24,6 +26,15 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    container_name: signbridge_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
 
 volumes:
   postgres_data:

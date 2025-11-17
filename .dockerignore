@@ -1,12 +1,34 @@
+# Python cache và build
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+
+# Local env & virtualenv
+venv/
 .venv/
-.env
-.git/
-.gitignore
+env/
+ENV/
+
+# Docker & compose
 Dockerfile
 docker-compose.yml
-tests/
+
+# Logs & cache
+*.log
+*.sqlite3
 *.db
+*.bak
+.cache/
+.idea/
+.vscode/
+
+# Data & models (nếu bạn có AI)
+data/
+datasets/
+ai/
+checkpoints/
+outputs/
+uploads/
