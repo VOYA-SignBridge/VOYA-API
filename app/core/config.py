@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str
     supabase_project_id: str
     supabase_jwks_url: str
+    cloudinary_cloud_name: str
+    cloudinary_api_key: str
+    cloudinary_api_secret: str
     class Config:
         env_file = ".env"
 

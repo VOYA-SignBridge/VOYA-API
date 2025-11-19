@@ -63,8 +63,10 @@ class RoomRepository:
 
     #Mark participant as left
     def mark_left(self, room_id: int, user_id: int|None, display_name: str|None):
+        
         q = self.db.query(RoomParticipant).filter(RoomParticipant.room_id==room_id)
-        if user_id: q = q.filter(RoomParticipant.user_id==user_id)
+        if user_id: 
+            q = q.filter(RoomParticipant.user_id==user_id)
         else: q = q.filter(RoomParticipant.display_name==display_name)
         p = q.order_by(RoomParticipant.joined_at.desc()).first()
         if p and not p.left_at:
@@ -79,3 +81,4 @@ class RoomRepository:
     def delete_room(self, room_id: int):
         print("Deleting room: ", room_id)
         deleted_room= self.db.query(Room).filter(Room.id==room_id).first()
+        return deleted_room

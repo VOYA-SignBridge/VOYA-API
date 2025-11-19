@@ -36,8 +36,8 @@ def join_room(code: str,
 @router.post("/{code}/leave")
 def leave_room(code: str, display_name: str|None = None, db: Session = Depends(get_db), me: dict|None = Depends(get_current_user)):
     user_id = me["user_id"] if me else None
-    svc = RoomService(db); return svc.leave_room(code, user_id, display_name)
+    room_service = RoomService(db); return room_service.leave_room(code, user_id, display_name)
 
 @router.get("/{code}/participants")
 def participants(code: str, db: Session = Depends(get_db)):
-    svc = RoomService(db); return svc.list_participants(code)
+    room_service = RoomService(db); return room_service.list_participants(code)
