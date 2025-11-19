@@ -1,12 +1,10 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
-from app.core.dependencies import get_current_user
 from app.db.data_initializer import init_seed_data
 from app.routers import auth_router, room_router, room_ws_router, sign_video_router
 from app.db.database import engine, Base, get_db
 from app.core import exceptions
-from app.core.auth_middleware import AuthMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from app.utils.sign_cache import sign_cache
 from app.utils.init_db import init_db
@@ -27,7 +25,6 @@ app.add_exception_handler(Exception, exceptions.global_exception_handler)
 app.add_exception_handler(HTTPException, exceptions.http_exception_handler)
 app.add_exception_handler(ValidationError, exceptions.validation_exception_handler)
 
-app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:8081"],  # React dev server
@@ -48,7 +45,7 @@ def startup_event():
 def root():
     return {"message": "Welcome to VOYA SignBridge Backend"}
 @app.get("/test-cloudinary")
-def test_cloudinary(meL: dict = Depends(get_current_user)):
+def test_cloudinary():
     url, _ = cloudinary_url(
         "voya_sign_language/chao_y9ra17",  # public_id của video chào
         resource_type="video",

@@ -1,21 +1,19 @@
-from fastapi import Depends,Header, HTTPException, Request, status
-from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer,HTTPBearer
-from jose import JWTError, jwt
-from sqlalchemy.orm import Session
-from app.db.database import get_db
-from app.models.user import User
-from app.core.config import settings
-from app.services.user_service import UserService
+"""Utility dependencies shared by multiple routers."""
 
-auth_scheme = HTTPBearer()
+from fastapi import Request
 
-def get_current_user(request: Request, db=Depends(get_db), credentials: HTTPAuthorizationCredentials = Depends(auth_scheme)):
-    payload = request.state.user
-    if not payload:
-        raise HTTPException(401, "Unauthorized")
 
-    service = UserService(db)
-    return service.get_or_create_user(payload)
+def get_current_user(request: Request):
+    """Return the authenticated user or ``None`` if authentication is disabled.
+
+    The project used to rely on Supabase authentication middleware that stored
+    the decoded user payload in ``request.state.user``.  Authentication has been
+    removed, so we now simply return whatever might be present without raising
+    errors when the header is missing.  This lets every endpoint operate in a
+    "guest" mode.
+    """
+
+    return getattr(request.state, "user", None)
 # SUPERBASE_JWT_SECRET = settings.superbase_jwt_secret
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 

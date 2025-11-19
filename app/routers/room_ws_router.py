@@ -6,7 +6,6 @@ from app.core.redis_client import redis_client
 from app.db.database import get_db
 from sqlalchemy.orm import Session
 from app.repositories.room_repo import RoomRepository
-from app.core.auth_middleware import verify_supabase_jwt
 
 router = APIRouter(prefix="/ws/rooms", tags=["Rooms-WS"])
 
@@ -21,32 +20,10 @@ async def room_ws(
     participant_id: str | None = Query(None),
     role: str = Query("normal"),
     display_name: str | None = None,
+    user_id: str | None = Query(None, description="Optional user identifier"),
     db: Session = Depends(get_db)
 ):
-    # 1. Extract token from subprotocol
-    subproto = websocket.headers.get("sec-websocket-protocol")
-
-    if not subproto:
-        return await websocket.close(code=4403, reason="Missing subprotocol")
-
-    try:
-        protocol, token = subproto.split(",", 1)
-        token = token.strip()
-    except:
-        return await websocket.close(code=4403, reason="Invalid subprotocol format")
-
-    if not token:
-        return await websocket.close(code=4403, reason="Missing token")
-
-    # 2. Verify JWT
-    try:
-        payload = verify_supabase_jwt(token)
-    except:
-        return await websocket.close(code=4403, reason="Invalid token")
-
-    user_id = payload["sub"]
-
-    # 3. Validate parameters
+    # 1. Validate parameters
     if not participant_id:
         return await websocket.close(code=4401, reason="Missing participant_id")
 
@@ -54,13 +31,21 @@ async def room_ws(
     if not room_repo.get_room_by_code(code):
         return await websocket.close(code=4404, reason="Room not found")
 
-    # 4. Accept WS ONCE with subprotocol
-    await websocket.accept(subprotocol="jwt")
+    accept_kwargs = {}
+    subproto = websocket.headers.get("sec-websocket-protocol")
+    if subproto:
+        protocol = subproto.split(",", 1)[0].strip()
+        if protocol:
+            accept_kwargs["subprotocol"] = protocol
+
+    await websocket.accept(**accept_kwargs)
+
+    resolved_user_id = user_id or participant_id
 
     # 5. Save connection
     ROOM_CONN.setdefault(code, {})[participant_id] = websocket
 
-    print(f"[WS CONNECT] room={code}, user={user_id}, pid={participant_id}")
+    print(f"[WS CONNECT] room={code}, user={resolved_user_id}, pid={participant_id}")
 
     # 6. Broadcast join via Redis
     await redis_client.publish(
@@ -68,7 +53,7 @@ async def room_ws(
         json.dumps({
             "type": "presence.join",
             "participant_id": participant_id,
-            "user_id": user_id,
+            "user_id": resolved_user_id,
             "role": role,
             "display_name": display_name
         })
@@ -105,7 +90,7 @@ async def room_ws(
             msg = json.loads(raw)
 
             msg["participant_id"] = participant_id
-            msg["user_id"] = user_id
+            msg["user_id"] = resolved_user_id
 
             await redis_client.publish(
                 f"room:{code}",
@@ -122,10 +107,9 @@ async def room_ws(
             json.dumps({
                 "type": "presence.leave",
                 "participant_id": participant_id,
-                "user_id": user_id
+                "user_id": resolved_user_id
             })
         )
 
         ROOM_CONN.get(code, {}).pop(participant_id, None)
         print(f"[WS DISCONNECT] {participant_id}")
-
