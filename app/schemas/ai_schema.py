@@ -8,3 +8,13 @@ class Sign2TextInput(BaseModel):
 # ✅ Dành cho model alphabet (PyTorch)
 class AlphabetInput(BaseModel):
     frames: List[List[List[float]]]  # seq_len × 21 keypoints × 3 coords
+
+class SignSequenceRequest(BaseModel):
+    # mỗi frame là 1 vector float chiều D=in_dim
+    frames: List[List[float]]
+
+
+class SignPredictionResponse(BaseModel):
+    label: str
+    probability: float
+    raw_probs: List[float]

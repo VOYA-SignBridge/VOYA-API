@@ -6,7 +6,7 @@ import tensorflow as tf
 #  PATH FIX – absolute path
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(CURRENT_DIR, "..", "..", "ai", "best_model_Simple_LSTM.h5")
-LABELS_PATH = os.path.join(CURRENT_DIR, "..", "..", "ai", "labels_sign2text.json")
+LABELS_PATH = os.path.join(CURRENT_DIR, "..", "..", "ai", "sign2text_labels.json")
 
 MODEL_PATH = os.path.normpath(MODEL_PATH)
 LABELS_PATH = os.path.normpath(LABELS_PATH)
