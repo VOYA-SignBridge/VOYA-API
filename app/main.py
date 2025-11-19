@@ -6,7 +6,7 @@ from app.db.data_initializer import init_seed_data
 from app.routers import auth_router, room_router, room_ws_router, sign_video_router
 from app.db.database import engine, Base, get_db
 from app.core import exceptions
-from app.core.auth_middleware import AuthMiddleware
+# from app.core.auth_middleware import AuthMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from app.utils.sign_cache import sign_cache
 from app.utils.init_db import init_db
@@ -27,7 +27,7 @@ app.add_exception_handler(Exception, exceptions.global_exception_handler)
 app.add_exception_handler(HTTPException, exceptions.http_exception_handler)
 app.add_exception_handler(ValidationError, exceptions.validation_exception_handler)
 
-app.add_middleware(AuthMiddleware)
+# app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:8081"],  # React dev server
