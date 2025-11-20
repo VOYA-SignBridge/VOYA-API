@@ -19,7 +19,7 @@ def text_to_sign_videos(text: str) -> list[SignVideo]:
             item["public_id"],
             resource_type="video",
             secure=True,
-            format="webm"
+            format="mp4"
         )
         videos.append(
             SignVideo(
