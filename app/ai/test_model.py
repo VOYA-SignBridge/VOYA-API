@@ -77,8 +77,8 @@
 # print(confusion_matrix(y, y_pred))
 # print(classification_report(y, y_pred))
 
-from app.services.ai.ai_sign2text_service import predict_sign2text
-# sample_seq = load from file or craft a synthetic sequence
-sample_seq = [...] 
-label, probs = predict_sign2text(sample_seq)
-print("PRED:", label, probs)
+# from app.services.ai.ai_sign2text_service import predict_sign2text
+# # sample_seq = load from file or craft a synthetic sequence
+# sample_seq = [...] 
+# label, probs = predict_sign2text(sample_seq)
+# print("PRED:", label, probs)
