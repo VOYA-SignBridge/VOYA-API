@@ -3,10 +3,10 @@ import json
 import torch
 import torch.nn as nn
 from typing import Any, Dict
+from pathlib import Path
 
-
-MODEL_PATH = os.path.join("app", "ai", "alphabets_model.pt")
-LABELS_PATH = os.path.join("app", "ai", "alphabet_labels.json")
+MODEL_PATH = Path("./app/ai/alphabets_model.pt")
+LABELS_PATH = Path("./app/ai/alaphbet_labels.json")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #  MODEL DEFINITION 

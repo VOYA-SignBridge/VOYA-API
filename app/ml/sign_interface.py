@@ -9,8 +9,8 @@ import torch.nn.functional as F
 from .tcn_classifier import TCNClassifier
 
 # đường dẫn tới checkpoint và json nhãn
-CKPT_PATH = Path("app/ai/tcn_classifier.pt")
-LABELS_PATH = Path("app/ai/tcn_labels.json")  
+CKPT_PATH = Path("./app/ai/tcn_classifier.pt")
+LABELS_PATH = Path("./app/ai/tcn_labels.json")  
 
 
 def load_id2label(path: Path):
