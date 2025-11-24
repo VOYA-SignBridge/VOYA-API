@@ -12,7 +12,7 @@ class Sign(Base):
     public_id = Column(String(255), unique=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
+    description = Column(String(500), nullable=True)
     # one-to-many: Sign -> SignAlias
     aliases = relationship(
         "SignAlias",

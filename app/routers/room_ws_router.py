@@ -6,7 +6,7 @@ from app.core.redis_client import redis_client
 from app.db.database import get_db
 from sqlalchemy.orm import Session
 from app.repositories.room_repo import RoomRepository
-from app.core.auth_middleware import verify_supabase_jwt
+# from app.core.auth_middleware import verify_supabase_jwt
 
 router = APIRouter(prefix="/ws/rooms", tags=["Rooms-WS"])
 
