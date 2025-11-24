@@ -3,7 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from app.core.dependencies import get_current_user
 from app.db.data_initializer import init_seed_data
-from app.routers import auth_router, room_router, room_ws_router, sign_video_router
+from app.routers import auth_router, room_router, room_ws_router, sign_video_router, ai_router
 from app.db.database import engine, Base, get_db
 from app.core import exceptions
 # from app.core.auth_middleware import AuthMiddleware
@@ -21,7 +21,7 @@ app.include_router(auth_router.router)
 app.include_router(room_router.router)
 app.include_router(sign_video_router.router)
 
-# app.include_router(ai_router.router)
+app.include_router(ai_router.router)
 #--dang ly exception handlers--
 app.add_exception_handler(Exception, exceptions.global_exception_handler)
 app.add_exception_handler(HTTPException, exceptions.http_exception_handler)
@@ -30,7 +30,7 @@ app.add_exception_handler(ValidationError, exceptions.validation_exception_handl
 # app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8081"],  # React dev server
+    allow_origins=["*"],  # React dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

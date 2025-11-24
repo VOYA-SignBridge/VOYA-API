@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 
 MODEL_PATH = os.path.join("app", "ai", "alphabets_model.pt")
-LABELS_PATH = os.path.join("app", "ai", "labels_alphabet.json")
+LABELS_PATH = os.path.join("app", "ai", "alphabet_labels.json")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #  MODEL DEFINITION 
