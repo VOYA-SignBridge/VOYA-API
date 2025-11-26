@@ -1,13 +1,14 @@
 # app/routers/room_ws_router.py
 
+import time
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Query
 import json, asyncio
 from app.core.redis_client import redis_client
 from app.db.database import get_db
 from sqlalchemy.orm import Session
 from app.repositories.room_repo import RoomRepository
-# from app.core.auth_middleware import verify_supabase_jwt
-
+from app.core.auth_middleware import verify_supabase_jwt
+from app.services.sign_video_service import text_to_sign_videos
 router = APIRouter(prefix="/ws/rooms", tags=["Rooms-WS"])
 
 ROOM_CONN = {}          # { room_code: { participant_id: websocket } }
@@ -104,13 +105,44 @@ async def room_ws(
             raw = await websocket.receive_text()
             msg = json.loads(raw)
 
-            msg["participant_id"] = participant_id
-            msg["user_id"] = user_id
+            msg_type = msg.get("type")
+            if msg_type == "chat.message":
+                text = msg.get("text", "") or ""
+                videos = text_to_sign_videos(text)
 
-            await redis_client.publish(
-                f"room:{code}",
-                json.dumps(msg)
-            )
+                response = {
+                    "type" : "chat.message",
+                    "room_code": code,
+                    "text": text,
+                    "videos": [v.dict() for v in videos],
+                    "sender": 
+                    {
+                        "participant_id": participant_id,
+                        "user_id": user_id,
+                        "role": role,
+                        "display_name": display_name
+                    },
+                    "timestamp": int(time.time())
+
+                }
+
+
+            
+
+                await redis_client.publish(
+                    f"room:{code}",
+                    json.dumps(response)
+                )
+            else:
+                msg["participant_id"] = participant_id
+                msg["user_id"] = user_id
+                msg["role"] = role
+
+                await redis_client.publish(
+                    f"room:{code}",
+                    json.dumps(msg)
+                )
+
 
     except WebSocketDisconnect:
         pass

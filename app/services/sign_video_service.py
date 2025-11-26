@@ -37,7 +37,7 @@ def _build_videos_from_sign_items(items: List[Dict]) -> List[SignVideo]:
             item["public_id"],         # ví dụ: "chao_y9ra17"
             resource_type="video",
             secure=True,
-            format="webm",             # vì video của bạn là webm
+            format="mp4",             # vì video của bạn là webm
         )
         videos.append(
             SignVideo(
@@ -273,28 +273,5 @@ def text_to_sign_videos(
 
     # Không tìm được sign nào
     return []
-def _semantic_fallback(text: str) -> List[Dict]:
-    return []
 
-# def _semantic_fallback(text: str) -> List[Dict]:
-#     vectors = get_sign_vectors()
-#     if not vectors:
-#         return []
 
-#     user_vec = embed_text(text)
-
-#     sims = []
-#     for key, vec in vectors.items():
-#         sim = float(
-#             np.dot(user_vec, vec)
-#             / (np.linalg.norm(user_vec) * np.linalg.norm(vec) + 1e-8)
-#         )
-#         if sim > 0.55:
-#             sims.append((key, sim))
-
-#     if not sims:
-#         return []
-
-#     sims.sort(key=lambda x: x[1], reverse=True)
-#     top_keys = [k for k, _ in sims[:2]]
-#     return sign_cache.get_by_keys(top_keys)

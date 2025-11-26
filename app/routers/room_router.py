@@ -9,8 +9,8 @@ router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
 #step 1:FE call to create room
 @router.post("/create")
-def create_room(ttl_minutes: int|None = 120, db: Session = Depends(get_db)):
-    # print("Current userID:" , me.supabase_id)
+def create_room(ttl_minutes: int|None = 120, db: Session = Depends(get_db), me: dict|None = Depends(get_current_user)):
+    print("Current userID:" , me.supabase_id)
     room_service = RoomService(db); 
     
     return room_service.create_room(me.supabase_id, ttl_minutes)
