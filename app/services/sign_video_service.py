@@ -2,9 +2,16 @@
 
 from typing import List, Dict, Optional
 import json
+from fastapi import HTTPException
 import numpy as np
 # from app.ai.embedding_text import get_sign_vectors, embed_text
-import google.generativeai as genai
+import logging
+
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
+    logging.warning("google.generativeai is not installed. Sign-video generation via Gemini is disabled.")
 from cloudinary.utils import cloudinary_url
 
 from app.core.config import settings
@@ -33,18 +40,25 @@ def _build_videos_from_sign_items(items: List[Dict]) -> List[SignVideo]:
     videos: List[SignVideo] = []
 
     for item in items:
-        url, _ = cloudinary_url(
-            item["public_id"],         # ví dụ: "chao_y9ra17"
+        mp4_url, _ = cloudinary_url(
+            item["public_id"],
             resource_type="video",
             secure=True,
-            format="mp4",             # vì video của bạn là webm
+            format="mp4",
+        )
+        webm_url, _ = cloudinary_url(
+            item["public_id"],
+            resource_type="video",
+            secure=True,
+            format="webm",
         )
         videos.append(
             SignVideo(
                 sign_id=item["sign_id"],
                 key=item["key"],
                 phrase=item["phrase_raw"],
-                url=url,
+                mp4_url=mp4_url,
+                webm_url=webm_url,
             )
         )
 
@@ -249,6 +263,12 @@ def text_to_sign_videos(
     Trả về list SignVideo (backend trả cho React Native).
     """
 
+    if genai is None:
+        # Tạm thời cho backend sống, chỉ chặn endpoint này
+        raise HTTPException(
+            status_code=500,
+            detail="Gemini is not available on this server (google.generativeai not installed)."
+        )
     # Bước 0: normalize string thô
     norm = normalize(text)
     if not norm:

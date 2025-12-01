@@ -24,7 +24,7 @@ DEFAULT_SIGNS = [
     # 3. BẦU TRỜI
     {
         "key": "BAU_TROI",
-        "public_id": "bau_troi_grr60x",
+        "public_id": "bau_troi_grr6ox",
         "aliases": ["bầu trời", "bau troi", "bầu", "trời"]
     },
 

@@ -76,9 +76,21 @@
 # from sklearn.metrics import confusion_matrix, classification_report
 # print(confusion_matrix(y, y_pred))
 # print(classification_report(y, y_pred))
+import asyncio
+import aiohttp
 
-from app.services.ai.ai_sign2text_service import predict_sign2text
-# sample_seq = load from file or craft a synthetic sequence
-sample_seq = [...] 
-label, probs = predict_sign2text(sample_seq)
-print("PRED:", label, probs)
+URL = "http://localhost:8000/rooms/MK5G1LVT/participants"
+
+async def run_test():
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for _ in range(50):  # 50 lần song song
+            tasks.append(session.get(URL))
+
+        responses = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for i, res in enumerate(responses):
+            print(i, type(res), getattr(res, "status", None))
+
+asyncio.run(run_test())
+

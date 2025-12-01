@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi.security import HTTPBearer
+from app.core.dependencies import get_current_user
 from app.ml.sign_interface import predict_sign
 from app.services.ai.ai_sign2text_service import predict_sign2text
 from app.services.ai.ai_alphabet_service import predict_alphabet
 from app.schemas.ai_schema import Sign2TextInput, AlphabetInput, SignPredictionResponse, SignSequenceRequest
 # from app.core.dependencies import get_current_user 
-from app.models.user import User
-from app.db.database import get_db
 security = HTTPBearer()
 
 router = APIRouter(prefix="/ai", tags=["AI SERVICE"])
@@ -29,12 +28,14 @@ def alphabet_recognition(sign_input: AlphabetInput):
 @router.post("/tcn-recognize", response_model=SignPredictionResponse)
 def recognize_sign(
     req: SignSequenceRequest,
+    me: dict|None = Depends(get_current_user)
     
 ):
     if not req.frames:
         raise HTTPException(status_code=400, detail="frames must not be empty")
 
     try:
+        print("Input frames: ", len(req.frames), "frames of dim", len(req.frames[0]))
         label, prob, probs = predict_sign(req.frames)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
