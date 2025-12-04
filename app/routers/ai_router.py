@@ -27,9 +27,7 @@ def alphabet_recognition(sign_input: AlphabetInput):
 
 @router.post("/tcn-recognize", response_model=SignPredictionResponse)
 def recognize_sign(
-    req: SignSequenceRequest,
-    me: dict|None = Depends(get_current_user)
-    
+    req: SignSequenceRequest
 ):
     if not req.frames:
         raise HTTPException(status_code=400, detail="frames must not be empty")

@@ -7,9 +7,8 @@ from app.models.user import User
 from app.core.config import settings
 from app.services.user_service import UserService
 
-auth_scheme = HTTPBearer()
 
-def get_current_user(request: Request, db=Depends(get_db), credentials: HTTPAuthorizationCredentials = Depends(auth_scheme)):
+def get_current_user(request: Request, db=Depends(get_db)):
     payload = request.state.user
     if not payload:
         raise HTTPException(401, "Unauthorized")

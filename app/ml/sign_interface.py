@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import List, Tuple
-
+import os
 import torch
 import torch.nn.functional as F
 
@@ -23,22 +23,33 @@ def load_id2label(path: Path):
 ID2LABEL = load_id2label(LABELS_PATH)
 
 
+
 def load_tcn_from_ckpt(device: str | None = None) -> TCNClassifier:
-    """Load TCN checkpoint được train trên Windows nhưng chạy trên Linux."""
+    """Load TCN checkpoint bất kể train trên Windows hay Linux."""
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
-    # 👇 Trick: map WindowsPath -> PosixPath khi unpickle checkpoint
-    has_windows_path = hasattr(pathlib, "WindowsPath")
-    if has_windows_path:
-        old_windows_path = pathlib.WindowsPath
-        pathlib.WindowsPath = pathlib.PosixPath
+    # Lưu lại class gốc để restore
+    orig_windows_path = pathlib.WindowsPath
+    orig_posix_path = pathlib.PosixPath
 
     try:
+        if os.name == "nt":
+            # 🟢 ĐANG CHẠY TRÊN WINDOWS
+            # Nếu checkpoint được save trên Linux → trong pickle có PosixPath
+            # → map PosixPath sang WindowsPath để unpickle được
+            pathlib.PosixPath = pathlib.WindowsPath  # type: ignore
+        else:
+            # 🟢 ĐANG CHẠY TRÊN LINUX/MAC
+            # Nếu checkpoint được save trên Windows → trong pickle có WindowsPath
+            # → map WindowsPath sang PosixPath
+            pathlib.WindowsPath = pathlib.PosixPath  # type: ignore
+
         ckpt = torch.load(str(CKPT_PATH), map_location=device)
+
     finally:
-        # trả lại class gốc để tránh side-effect về sau
-        if has_windows_path:
-            pathlib.WindowsPath = old_windows_path
+        # Restore lại tránh side-effect cho chỗ khác
+        pathlib.WindowsPath = orig_windows_path
+        pathlib.PosixPath = orig_posix_path
 
     in_dim: int = ckpt["in_dim"]
     num_classes: int = ckpt["num_classes"]
@@ -55,7 +66,6 @@ def load_tcn_from_ckpt(device: str | None = None) -> TCNClassifier:
     model.load_state_dict(ckpt["model_state"])
     model.to(device)
     model.eval()
-
     return model
 
 

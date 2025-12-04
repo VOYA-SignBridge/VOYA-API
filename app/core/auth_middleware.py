@@ -11,7 +11,9 @@ JWKS_CACHE= {"keys": None, "expired_at": 0}
 PUBLIC_PATHS = {
     "/docs",
     "/redoc",
-    "/openapi.json"
+    "/openapi.json",
+    "/ai/tcn-recognize",
+    "/sign-video/translate",
 }
 
 def get_jwks():
