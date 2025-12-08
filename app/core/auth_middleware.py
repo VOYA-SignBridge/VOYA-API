@@ -1,7 +1,6 @@
 import time
 
 from fastapi import HTTPException, Request
-from fastapi.security.utils import get_authorization_scheme_param
 import requests
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings

@@ -1,4 +1,5 @@
 # app/services/user_service.py
+from psycopg2 import IntegrityError
 from app.repositories.user_repo import UserRepository
 
 class UserService:
@@ -15,8 +16,15 @@ class UserService:
         if user:
             return user
         
-        return self.repo.create_from_supabase(
-            supabase_id=supabase_id,
-            email=email,
-            full_name=email.split("@")[0]
-        )
+        try:
+            return self.repo.create_from_supabase(
+                supabase_id=supabase_id,
+                email=email,
+                full_name=email.split("@")[0]
+            )
+        except IntegrityError:
+            self.db.rollback()
+            return (
+                self.repo.get_by_supabase_id(supabase_id)
+            )
+        

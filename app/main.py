@@ -1,7 +1,6 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
-from app.core.dependencies import get_current_user
 from app.db.data_initializer import init_seed_data
 from app.routers import auth_router, room_router, room_ws_router, sign_video_router, ai_router
 from app.db.database import engine, Base, get_db
@@ -9,8 +8,7 @@ from app.core import exceptions
 from app.core.auth_middleware import AuthMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from app.utils.sign_cache import sign_cache
-from app.utils.init_db import init_db
-from cloudinary.utils import cloudinary_url
+from starlette.exceptions import HTTPException as StarletteHTTPException
 # from app.ai.embedding_text import build_sign_embeddings
 
 Base.metadata.create_all(bind=engine)
@@ -23,10 +21,11 @@ app.include_router(sign_video_router.router)
 
 app.include_router(ai_router.router)
 #--dang ly exception handlers--
-app.add_exception_handler(Exception, exceptions.global_exception_handler)
 app.add_exception_handler(HTTPException, exceptions.http_exception_handler)
+app.add_exception_handler(RequestValidationError, exceptions.validation_exception_handler)
 app.add_exception_handler(ValidationError, exceptions.validation_exception_handler)
-
+app.add_exception_handler(Exception, exceptions.global_exception_handler)
+app.add_exception_handler(StarletteHTTPException, exceptions.http_exception_handler)
 app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -47,11 +46,3 @@ def startup_event():
 @app.get("/")
 def root():
     return {"message": "Welcome to VOYA SignBridge Backend"}
-@app.get("/test-cloudinary")
-def test_cloudinary(meL: dict = Depends(get_current_user)):
-    url, _ = cloudinary_url(
-        "voya_sign_language/chao_y9ra17",  # public_id của video chào
-        resource_type="video",
-        secure=True,
-    )
-    return {"url": url}
