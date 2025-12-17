@@ -19,11 +19,5 @@ router= APIRouter(prefix="/auth", tags=["AUTHENTICATION SERVICE"])
 
 @router.get("/me")
 def get_me(me = Depends(get_current_user)):
-    return {
-        "id": me.id,
-        "email": me.email,
-        "full_name": me.full_name,
-        "role": me.role,
-        "created_at": me.created_at,
-    }
+    return me
 

@@ -82,7 +82,7 @@ async def end_room(
     }
 
 @router.get("/{code}/room")
-def get_room(code: str, db: Session = Depends(get_db)):
+def get_room(code: str, db: Session = Depends(get_db), me = Depends(get_current_user)):
     room_service = RoomService(db)
 
     room = room_service.get_room_by_code(code)

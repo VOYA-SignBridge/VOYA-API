@@ -1,20 +1,72 @@
-from fastapi import Depends,Header, HTTPException, Request, status
-from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer,HTTPBearer
-from jose import JWTError, jwt
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPBearer
+from jose import jwt
 from sqlalchemy.orm import Session
+
 from app.db.database import get_db
-from app.models.user import User
-from app.core.config import settings
 from app.services.user_service import UserService
+from app.core.config import settings
+import time
+import requests
+authentication_scheme = HTTPBearer()  # Placeholder for authentication scheme if needed
+JWKS_CACHE = {"keys": None, "expired_at": 0}
 
 
-def get_current_user(request: Request, db=Depends(get_db)):
-    payload = request.state.user
-    if not payload:
-        raise HTTPException(401, "Unauthorized")
+def get_jwks():
+    now = time.time()
+    if JWKS_CACHE["keys"] and JWKS_CACHE["expired_at"] > now:
+        return JWKS_CACHE["keys"]
+
+    url = f"https://{settings.supabase_project_id}.supabase.co/auth/v1/jwks"
+    print("JWKS URL =", url)
+
+    res = requests.get(url)
+    if res.status_code != 200:
+        raise HTTPException(500, f"Failed to load JWKS: {res.text}")
+
+    data = res.json()
+    if "keys" not in data:
+        raise HTTPException(500, f"Invalid JWKS format: {data}")
+
+    JWKS_CACHE["keys"] = data
+    JWKS_CACHE["expired_at"] = now + 3600
+    return data
+
+
+def verify_supabase_jwt(access_token: str):
+    try:
+        payload = jwt.decode(
+            access_token,
+            settings.supabase_jwt_secret,   # ✅ HS256 verify
+            algorithms=["HS256"],
+            audience="authenticated",
+            issuer=f"https://{settings.supabase_project_id}.supabase.co/auth/v1",
+        )
+        return payload
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"JWT verification failed: {e}",
+        )
+
+
+def get_current_user(request: Request, db: Session = Depends(get_db), 
+                     credentials: HTTPBearer = Depends(authentication_scheme)):
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid Authorization header",
+        )
+
+    token = auth_header.split(" ", 1)[1]
+
+    payload = verify_supabase_jwt(token)
 
     service = UserService(db)
     return service.get_or_create_user(payload)
+
 # SUPERBASE_JWT_SECRET = settings.superbase_jwt_secret
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
