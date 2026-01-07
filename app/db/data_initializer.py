@@ -75,7 +75,44 @@ DEFAULT_SIGNS = [
         "key": "CA_VOI",
         "public_id": "ca_voi_tty6dc",
         "aliases": ["cá voi", "ca voi", "whale"]
-    }
+    },
+        # 11. CÁ
+    {
+        "key": "CA",
+        "public_id": "ca_nl1tzq",
+        "aliases": [
+            "cá",
+            "ca",
+            "con cá",
+            "fish"
+        ]
+    },
+
+    # 12. ĐỒNG BÀO
+    {
+        "key": "DONG_BAO",
+        "public_id": "dong_bao_rgzwxe",
+        "aliases": [
+            "đồng bào",
+            "dong bao",
+            "đồng",
+            "bào",
+            "đồng bào ta"
+        ]
+    },
+
+    # 13. RANG MUỐI
+    {
+        "key": "RANG_MUOI",
+        "public_id": "rang_muoi_ztklir",
+        "aliases": [
+            "rang muối",
+            "rang muoi",
+            "muối rang",
+            "rang"
+        ]
+    },
+
 ]
 
 
