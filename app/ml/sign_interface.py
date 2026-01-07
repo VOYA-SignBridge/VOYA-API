@@ -1,7 +1,13 @@
 from __future__ import annotations
 import json
+import sys
+import pathlib
 from pathlib import Path
 from typing import List, Tuple
+
+# Monkey-patch to handle WindowsPath in pickled models on Linux
+if sys.platform != 'win32':
+    pathlib.WindowsPath = pathlib.PosixPath
 
 import torch
 import torch.nn.functional as F
@@ -14,7 +20,7 @@ LABELS_PATH = Path("./app/ai/tcn_labels.json")
 
 
 def load_id2label(path: Path):
-    with path.open("r", encoding="utf-8") as f:
+    with open(str(path), "r", encoding="utf-8") as f:
         raw = json.load(f)
     # "0": "abc" -> {0: "abc"}
     return {int(k): v for k, v in raw.items()}
@@ -25,7 +31,7 @@ ID2LABEL = load_id2label(LABELS_PATH)
 
 def load_tcn_from_ckpt(device: str | None = None) -> TCNClassifier:
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-    ckpt = torch.load(CKPT_PATH, map_location=device)
+    ckpt = torch.load(str(CKPT_PATH), map_location=device, weights_only=False)
 
     in_dim: int = ckpt["in_dim"]
     num_classes: int = ckpt["num_classes"]

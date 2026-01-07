@@ -1,12 +1,18 @@
 import os
 import json
+import sys
+import pathlib
 import torch
 import torch.nn as nn
 from typing import Any, Dict
 from pathlib import Path
 
+# Monkey-patch to handle WindowsPath in pickled models on Linux
+if sys.platform != 'win32':
+    pathlib.WindowsPath = pathlib.PosixPath
+
 MODEL_PATH = Path("./app/ai/alphabets_model.pt")
-LABELS_PATH = Path("./app/ai/alaphbet_labels.json")
+LABELS_PATH = Path("./app/ai/alphabet_labels.json")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #  MODEL DEFINITION 
@@ -53,7 +59,7 @@ def load_model():
     try:
         # dùng tham số y như khi train
         model = ParallelCNNLSTMModel(input_size=3, hidden_size=128, num_layers=2, num_classes=23)
-        state_dict = torch.load(MODEL_PATH, map_location=DEVICE)
+        state_dict = torch.load(str(MODEL_PATH), map_location=DEVICE, weights_only=False)
         model.load_state_dict(state_dict, strict=True)
         model.eval().to(DEVICE)
         print(f"✅ Loaded alphabet model: {MODEL_PATH}")
