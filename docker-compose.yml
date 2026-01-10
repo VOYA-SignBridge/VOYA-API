@@ -1,9 +1,9 @@
 services:
   backend:
     build: .
-    container_name: signbridge_api
+    container_name: voya_api
     ports:
-      - "8000:8000"
+      - "8080:8080"
     env_file:
       - .env
     volumes:
@@ -17,11 +17,11 @@ services:
 
   db:
     image: postgres:15
-    container_name: signbridge_db
+    container_name: voya_db
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: signbridge
+      POSTGRES_DB: voya
     ports:
       - "5432:5432"
     volumes:
@@ -30,7 +30,7 @@ services:
 
   redis:
     image: redis:7
-    container_name: signbridge_redis
+    container_name: voya_redis
     ports:
       - "6379:6379"
     restart: unless-stopped
