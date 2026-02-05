@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     cloudinary_api_secret: str
     gemini_api_key: str
     class Config:
-        env_file = ".env"
+        env_file = ".env",
+        env_file_encoding = "utf-8"
+        extra = "ignore"
 
 settings = Settings()

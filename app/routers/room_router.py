@@ -7,7 +7,7 @@ from app.core.redis_client import redis_client
 from app.db.database import get_db
 from app.services.room_service import RoomService
 from app.core.dependencies import get_current_user
-router = APIRouter(prefix="/rooms", tags=["Rooms"])
+router = APIRouter(prefix="/rooms", tags=["Room Service"])
 
 
 #step 1:FE call to create room

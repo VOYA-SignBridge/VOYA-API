@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.repositories.room_repo import RoomRepository
 from app.repositories.user_repo import UserRepository
 from app.core.dependencies import verify_supabase_jwt
-from app.services.sign_video_service import text_to_sign_videos
+# from app.services.sign_video_service import text_to_sign_videos
 from app.services.room_service import RoomService
 router = APIRouter(prefix="/ws/rooms", tags=["Rooms-WS"])
 
@@ -137,7 +137,7 @@ async def room_ws(
             msg_type = msg.get("type")
             if msg_type == "chat.message":
                 text = msg.get("text", "") or ""
-                videos = text_to_sign_videos(text)
+                videos = []
 
                 response = {
                     "type" : "chat.message",

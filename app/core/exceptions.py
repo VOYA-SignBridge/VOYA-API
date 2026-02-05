@@ -7,6 +7,21 @@ from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from starlette.exceptions import HTTPException as StarletteHTTPException
 logger = logging.getLogger("uvicorn.error")
 
+class AppError(Exception):
+    """Base class cho lỗi của ứng dụng"""
+    pass
+
+class DataNotFoundError(AppError):
+    """Lỗi khi không tìm thấy dữ liệu trong DB"""
+    pass
+
+class CloudinaryUploadError(AppError):
+    """Lỗi khi upload thất bại"""
+    pass
+
+class DatabaseOperationalError(AppError):
+    """Lỗi kết nối DB"""
+    pass
 # --- HTTPException: lỗi nghiệp vụ / auth / 4xx rõ ràng ---
 async def http_exception_handler(request: Request, exc: HTTPException):
     logger.warning(

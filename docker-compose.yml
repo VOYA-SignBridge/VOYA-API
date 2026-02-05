@@ -2,39 +2,13 @@ services:
   backend:
     build: .
     container_name: voya_api
+    image: koi1806/voya-api
     ports:
-      - "8080:8080"
+      - "2001:2001"
+      
     env_file:
       - .env
-    volumes:
-      - .:/app
-    depends_on:
-      - db
-      - redis
     restart: unless-stopped
     environment:
       TZ: Asia/Ho_Chi_Minh
-
-  db:
-    image: postgres:15
-    container_name: voya_db
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: voya
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-  redis:
-    image: redis:7
-    container_name: voya_redis
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
-
-volumes:
-  postgres_data:
+      

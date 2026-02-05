@@ -1,10 +1,8 @@
 
-import asyncio
 from datetime import datetime
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.repositories.room_repo import RoomRepository
-import json
 from app.core.redis_client import redis_client
 class RoomService:
     def __init__(self, db: Session):
