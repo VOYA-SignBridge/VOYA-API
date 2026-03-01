@@ -1,0 +1,14 @@
+services:
+  backend:
+    build: .
+    container_name: voya_api
+    image: koi1806/voya-api
+    ports:
+      - "2001:2001"
+      
+    env_file:
+      - .env
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      
