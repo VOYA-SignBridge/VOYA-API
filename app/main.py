@@ -60,6 +60,7 @@ origins = [
     # 3. Domain Production (Khi bạn đã deploy Web Admin lên host)
     "https://se.cit.ctu.edu.vn",
     "https://admin.yourdomain.com",
+    "https://ctusignbridge.vercel.app/"
     
     # Custom Backend App domains
     "http://api-signbridge.tamdevx.id.vn",
