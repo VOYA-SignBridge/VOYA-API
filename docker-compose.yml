@@ -1,14 +1,26 @@
 services:
-  backend:
-    build: .
-    container_name: voya_api
-    image: koi1806/voya-api
-    ports:
-      - "2001:2001"
-      
+  signbridge_api:
+    image: tamb2203579/voya_api:latest
+    container_name: signbridge_api
+    restart: always
+    expose:
+      - "8001"
     env_file:
       - .env
-    restart: unless-stopped
-    environment:
-      TZ: Asia/Ho_Chi_Minh
-      
+    depends_on:
+      - signbridge_redis
+    networks:
+      - ec2_global_network
+
+  signbridge_redis:
+    image: redis:6.2
+    container_name: signbridge_redis
+    restart: always
+    expose:
+      - "6379"
+    networks:
+      - ec2_global_network
+
+networks:
+  ec2_global_network:
+    external: true

@@ -79,7 +79,7 @@
 import asyncio
 import aiohttp
 
-URL = "http://localhost:8000/rooms/MK5G1LVT/participants"
+URL = "http://api-signbridge.tamdevx.id.vn/rooms/MK5G1LVT/participants"
 
 async def run_test():
     async with aiohttp.ClientSession() as session:

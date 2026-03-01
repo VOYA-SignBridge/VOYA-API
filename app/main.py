@@ -53,7 +53,6 @@ origins = [
     "http://localhost:8080",    # Port phổ biến khác
 
     # 2. Local IP (Quan trọng để test React Native hoặc điện thoại thật)
-    # Hãy thay bằng IP thực tế của máy bạn (Gõ 'ipconfig' hoặc 'ifconfig' để xem)
     "http://192.168.1.2:5173",  
     "http://192.168.1.10:5173", 
     "http://10.0.2.2:8081",     # Android Emulator truy cập về localhost máy tính
@@ -61,10 +60,12 @@ origins = [
     # 3. Domain Production (Khi bạn đã deploy Web Admin lên host)
     "https://se.cit.ctu.edu.vn",
     "https://admin.yourdomain.com",
+    
+    # Custom Backend App domains
+    "http://api-signbridge.tamdevx.id.vn",
+    "https://api-signbridge.tamdevx.id.vn",
 
     # 4. Mobile Apps (React Native)
-    # React Native trên Android/iOS không bị giới hạn bởi CORS như trình duyệt,
-    # nhưng thêm "null" đôi khi giúp fix lỗi trên một số trình giả lập web.
     "null", 
 ]
 
