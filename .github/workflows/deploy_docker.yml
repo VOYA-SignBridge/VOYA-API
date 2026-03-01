@@ -39,7 +39,7 @@ jobs:
           script: |
             cd ~/signbridge_app
             docker compose down
-            docker image rm tamb2203579/signbridge:latest
+            docker image rm tamb2203579/signbridge_api:latest
             docker pull tamb2203579/signbridge_api:latest
             docker compose up -d
             docker restart master_proxy
