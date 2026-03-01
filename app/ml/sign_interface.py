@@ -83,24 +83,49 @@ def get_tcn_model() -> TCNClassifier:
 
 
 
+# @torch.no_grad()
+# def predict_sign(frames: List[List[float]]) -> Tuple[str, float, List[float]]:
+#     if not frames:
+#         raise ValueError("Empty sequence")
+
+#     model = get_tcn_model()   # 👈 dùng model lazy-load
+
+#     x = torch.tensor(frames, dtype=torch.float32, device=DEVICE)  # [T, D]
+#     T_len, _ = x.shape
+
+#     x = x.unsqueeze(0)  # [1, T, D]
+#     lengths = torch.tensor([T_len], dtype=torch.long, device=DEVICE)
+
+#     logits = model(x, lengths)           # [1, num_classes]
+#     probs = F.softmax(logits, dim=-1)[0] # [num_classes]
+
+#     cls_id = int(torch.argmax(probs).item())
+#     prob = float(probs[cls_id].item())
+#     label = ID2LABEL.get(cls_id, str(cls_id))
+
+#     return label, prob, probs.tolist()
 @torch.no_grad()
 def predict_sign(frames: List[List[float]]) -> Tuple[str, float, List[float]]:
-    if not frames:
-        raise ValueError("Empty sequence")
+    if len(frames) < 12:   # ví dụ: tối thiểu 12 frame mới predict
+        return "WAITING", 0.0, []
 
-    model = get_tcn_model()   # 👈 dùng model lazy-load
+    model = get_tcn_model()
+    x = torch.tensor(frames, dtype=torch.float32, device=DEVICE)[-60:]  # lấy tối đa 48 frame gần nhất
+    T_len = x.shape[0]
 
-    x = torch.tensor(frames, dtype=torch.float32, device=DEVICE)  # [T, D]
-    T_len, _ = x.shape
+    x = x.unsqueeze(0)
+    lengths = torch.tensor([T_len], device=DEVICE)
 
-    x = x.unsqueeze(0)  # [1, T, D]
-    lengths = torch.tensor([T_len], dtype=torch.long, device=DEVICE)
+    logits = model(x, lengths)
+    probs = F.softmax(logits, dim=-1)[0]
 
-    logits = model(x, lengths)           # [1, num_classes]
-    probs = F.softmax(logits, dim=-1)[0] # [num_classes]
+    # Optional: EMA smoothing (nếu bạn giữ state giữa các request)
+    # global prev_probs
+    # if 'prev_probs' in globals():
+    #     probs = 0.6 * prev_probs + 0.4 * probs
+    # prev_probs = probs
 
-    cls_id = int(torch.argmax(probs).item())
-    prob = float(probs[cls_id].item())
-    label = ID2LABEL.get(cls_id, str(cls_id))
+    cls_id = int(probs.argmax())
+    prob = float(probs[cls_id])
 
-    return label, prob, probs.tolist()
+    return ID2LABEL.get(cls_id, "UNKNOWN"), prob, probs.tolist()

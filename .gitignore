@@ -13,7 +13,9 @@ venv/
 .venv/
 
 # Environment & secrets
+.env.development
 .env
+.env.production
 *.env
 
 # Logs / Databases
@@ -43,9 +45,6 @@ dist/
 docker-compose.override.yml
 *.pid
 *.pid.lock
-
-# Alembic migration versions
-alembic/versions/
 
 # System files
 .DS_Store
