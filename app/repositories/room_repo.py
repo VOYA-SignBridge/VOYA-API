@@ -1,4 +1,5 @@
 import secrets, string
+from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.models.room import Room
@@ -59,26 +60,74 @@ class RoomRepository:
         self.db.refresh(p)
         return p
 
-    
+    def mark_participant_left(
+        self,
+        room_id: int,
+        user_id: Optional[int] = None,
+        display_name: Optional[str] = None,
+    ) -> Optional[RoomParticipant]:
+        """
+        Đánh dấu một participant trong room đã rời đi (set left_at).
 
-    #Mark participant as left
-    def mark_left(self, room_id: int, user_id: int|None, display_name: str|None):
-        
-        q = self.db.query(RoomParticipant).filter(RoomParticipant.room_id==room_id)
-        if user_id: 
-            q = q.filter(RoomParticipant.user_id==user_id)
-        else: q = q.filter(RoomParticipant.display_name==display_name)
-        p = q.order_by(RoomParticipant.joined_at.desc()).first()
-        if p and not p.left_at:
-            p.left_at = datetime.utcnow(); self.db.commit(); self.db.refresh(p)
-        return p
+        Ưu tiên tìm theo user_id, nếu không có thì fallback sang display_name.
+        Trả về bản ghi RoomParticipant đã được cập nhật (hoặc None nếu không tìm thấy).
+        """
 
+        # Không có đủ thông tin để xác định participant
+        if user_id is None and not display_name:
+            return None
+
+        query = (
+            self.db
+            .query(RoomParticipant)
+            .filter(RoomParticipant.room_id == room_id)
+        )
+
+        if user_id is not None:
+            # Ưu tiên dùng user_id vì đây là định danh duy nhất
+            query = query.filter(RoomParticipant.user_id == user_id)
+        else:
+            # Fallback theo display_name (ít an toàn hơn, có thể trùng)
+            query = query.filter(RoomParticipant.display_name == display_name)
+
+        # Lấy lần join mới nhất của participant này trong room
+        latest_participation = (
+            query
+            .order_by(RoomParticipant.joined_at.desc())
+            .first()
+        )
+
+        # Nếu tìm được và chưa set left_at thì cập nhật
+        if latest_participation and latest_participation.left_at is None:
+            latest_participation.left_at = datetime.utcnow()
+            self.db.commit()
+            self.db.refresh(latest_participation)
+
+        return latest_participation
+
+    def mark_all_left(self, room_id: int):
+        rows = (
+            self.db.query(RoomParticipant)
+            .filter(RoomParticipant.room_id == room_id, RoomParticipant.left_at == None)
+            .all()
+        )
+        for p in rows:
+            p.left_at = datetime.utcnow()
+
+        self.db.commit()
     #list participaints
     def list_participants(self, room_id: int):
         return self.db.query(RoomParticipant).filter(RoomParticipant.room_id==room_id, RoomParticipant.left_at==None).all()
 
 
     def delete_room(self, room_id: int):
-        print("Deleting room: ", room_id)
-        deleted_room= self.db.query(Room).filter(Room.id==room_id).first()
-        return deleted_room
+        room = self.db.query(Room).filter(Room.id == room_id).first()
+        if not room:
+            return None
+        self.db.delete(room)
+        self.db.commit()
+        return room
+
+    
+
+    

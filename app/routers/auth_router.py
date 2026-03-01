@@ -18,11 +18,6 @@ router= APIRouter(prefix="/auth", tags=["AUTHENTICATION SERVICE"])
 
 
 @router.get("/me")
-def get_me(user = Depends(get_current_user)):
-    return {
-        "id": user.id,
-        "supabase_id": user.supabase_id,
-        "email": user.email,
-        "full_name": user.full_name,
-    }
+def get_me(me = Depends(get_current_user)):
+    return me
 

@@ -4,40 +4,65 @@ from app.models.sign_alias import SignAlias
 
 class SignCache:
     def __init__(self):
-        # "binh minh" -> { sign_id, key, public_id, phrase_raw }
-        self.phrase_to_sign: dict[str, dict] = {}
+        # map từ phrase chuẩn hoá -> { sign_id, key, public_id, phrase_raw }
+        self.phrase_to_sign = {}
+        # map từ key -> { sign_id, key, public_id, phrase_raw }
+        self.key_to_sign = {}
 
     def reload(self, db: Session):
         print("🔄 Reloading sign cache...")
+
         self.phrase_to_sign.clear()
+        self.key_to_sign.clear()
+
         aliases = db.query(SignAlias).all()
+
         for al in aliases:
-            print("alias in DB:", al.phrase_normalized, "->", al.sign.public_id)  # <--- thêm dòng này
-            self.phrase_to_sign[al.phrase_normalized] = {
+            item = {
                 "sign_id": al.sign.id,
                 "key": al.sign.key,
                 "public_id": al.sign.public_id,
                 "phrase_raw": al.phrase_raw,
             }
-        print("✅ Sign cache entries:", self.phrase_to_sign.keys())
 
+            # phrase chuẩn hoá
+            self.phrase_to_sign[al.phrase_normalized] = item
 
-    def match_tokens(self, tokens: list[str]):
+            # key -> sign
+            self.key_to_sign[al.sign.key] = item
+
+        print("✅ Loaded", len(self.phrase_to_sign), "phrases")
+
+    def match_tokens(self, tokens):
+        """
+        tokens: ["xin", "chao"]
+        ưu tiên match cụm 2 trước, sau đó 1 từ
+        """
         result = []
         i = 0
+
         while i < len(tokens):
-            # thử cụm 2 từ
+            # thử match 2 tokens
             if i + 1 < len(tokens):
-                two = f"{tokens[i]} {tokens[i+1]}"
+                two = tokens[i] + " " + tokens[i + 1]
                 if two in self.phrase_to_sign:
                     result.append(self.phrase_to_sign[two])
                     i += 2
                     continue
-            # thử 1 từ
+
+            # thử 1 token
             one = tokens[i]
             if one in self.phrase_to_sign:
                 result.append(self.phrase_to_sign[one])
+
             i += 1
+
         return result
 
+    def get_by_keys(self, keys):
+        """Trả về danh sách sign tương ứng với list key"""
+        return [self.key_to_sign[k] for k in keys if k in self.key_to_sign]
+
+
+# global instance
 sign_cache = SignCache()

@@ -4,15 +4,14 @@ import torch
 import torch.nn as nn
 from typing import Any, Dict
 
-
 MODEL_PATH = os.path.join("app", "ai", "alphabets_model.pt")
-LABELS_PATH = os.path.join("app", "ai", "labels_alphabet.json")
+LABELS_PATH = os.path.join("app", "ai", "alphabet_labels.json")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-#  MODEL DEFINITION 
+
 class ParallelCNNLSTMModel(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, num_classes, per_video_output=True):
-        super(ParallelCNNLSTMModel, self).__init__()
+        super().__init__()
         self.cnn = nn.Sequential(
             nn.Conv1d(in_channels=input_size, out_channels=64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
@@ -36,23 +35,35 @@ class ParallelCNNLSTMModel(nn.Module):
             is_video = True
         else:
             is_video = False
+
         x_cnn = x.permute(0, 2, 1)
         out_cnn = self.cnn(x_cnn)
+
         out_lstm, _ = self.lstm(x)
         out_lstm = self.fc_lstm(out_lstm[:, -1, :])
+
         out = torch.cat([out_cnn, out_lstm], dim=1)
         out = self.fc(out)
+
         if is_video:
             out = out.view(b, f, -1)
             if self.per_video_output:
                 out = out.mean(dim=1)
         return out
 
-#  MODEL LOADING
-def load_model():
+
+# 🔸 model & labels sẽ được lazy-load
+_ALPHABET_MODEL: ParallelCNNLSTMModel | None = None
+
+
+def load_model() -> ParallelCNNLSTMModel | None:
     try:
-        # dùng tham số y như khi train
-        model = ParallelCNNLSTMModel(input_size=3, hidden_size=128, num_layers=2, num_classes=23)
+        model = ParallelCNNLSTMModel(
+            input_size=3,
+            hidden_size=128,
+            num_layers=2,
+            num_classes=23,
+        )
         state_dict = torch.load(MODEL_PATH, map_location=DEVICE)
         model.load_state_dict(state_dict, strict=True)
         model.eval().to(DEVICE)
@@ -62,25 +73,28 @@ def load_model():
         print(f"❌ Failed to load alphabet model: {e}")
         return None
 
-model = load_model()
 
-# =============================
-#  LABELS
-# =============================
+def get_alphabet_model() -> ParallelCNNLSTMModel | None:
+    global _ALPHABET_MODEL
+    if _ALPHABET_MODEL is None:
+        _ALPHABET_MODEL = load_model()
+    return _ALPHABET_MODEL
+
+
+# Labels
 if os.path.exists(LABELS_PATH):
     with open(LABELS_PATH, "r", encoding="utf-8") as f:
         labels = json.load(f)
 else:
-    labels = {f"class_{i+1:04d}": chr(65 + i) for i in range(26)}  # A–Z fallback
+    labels = {f"class_{i+1:04d}": chr(65 + i) for i in range(26)}
     print("⚠️ Using fallback alphabet labels")
 
-# =============================
-#  PREDICT FUNCTION
-# =============================
+
 def predict_alphabet(frames: Any) -> Dict[str, Any]:
     """
-    frames: list[list[list[float]]] - mảng (seq_len, 21, 3)
+    frames: list[list[list[float]]] - (seq_len, 21, 3)
     """
+    model = get_alphabet_model()
     if model is None:
         return {"error": "Model not loaded"}
 
