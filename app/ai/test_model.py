@@ -61,19 +61,24 @@
 #         return {"error": str(e)
 
 
-import numpy as np
-import tensorflow as tf
-import os
-model = tf.keras.models.load_model(os.path.join("app", "ai", "best_model_Simple_LSTM.h5"))
-path_x= os.path.join("app", "ai", "dataset_X.dat")
-path_y= os.path.join("app", "ai", "dataset_y.dat")
-X = np.memmap(path_x, dtype="float32", mode="r", shape=(304, 60, 226))
-y = np.memmap(path_y, dtype="int32", mode="r", shape=(304,))
+# import numpy as np
+# import tensorflow as tf
+# import os
+# model = tf.keras.models.load_model(os.path.join("app", "ai", "best_model_Simple_LSTM.h5"))
+# path_x= os.path.join("app", "ai", "dataset_X.dat")
+# path_y= os.path.join("app", "ai", "dataset_y.dat")
+# X = np.memmap(path_x, dtype="float32", mode="r", shape=(304, 60, 226))
+# y = np.memmap(path_y, dtype="int32", mode="r", shape=(304,))
 
-preds = model.predict(X)
-y_pred = np.argmax(preds, axis=1)
+# preds = model.predict(X)
+# y_pred = np.argmax(preds, axis=1)
 
-from sklearn.metrics import confusion_matrix, classification_report
-print(confusion_matrix(y, y_pred))
-print(classification_report(y, y_pred))
+# from sklearn.metrics import confusion_matrix, classification_report
+# print(confusion_matrix(y, y_pred))
+# print(classification_report(y, y_pred))
 
+from app.services.ai.ai_sign2text_service import predict_sign2text
+# sample_seq = load from file or craft a synthetic sequence
+sample_seq = [...] 
+label, probs = predict_sign2text(sample_seq)
+print("PRED:", label, probs)
