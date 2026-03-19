@@ -76,13 +76,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins, # Dùng danh sách cụ thể
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 @app.on_event("startup")
 def startup_event():
     db = next(get_db())
