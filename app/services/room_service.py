@@ -51,8 +51,13 @@ class RoomService:
         people = self.repo.list_participants(room.id)
         return [
             {
+<<<<<<< HEAD
                 "participant_id": p.id, 
                 "user_id": p.user_id, 
+=======
+            "participant_id": p.id, 
+            "user_id": p.user_id, 
+>>>>>>> origin/flyio-deploy
              "display_name": p.display_name, 
              "role": p.role, 
              "joined_at": p.joined_at

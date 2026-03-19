@@ -1,4 +1,3 @@
-import os
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
@@ -45,15 +44,38 @@ app.add_middleware(RateLimitMiddleware)
 
 # app/main.py
 
-origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+origins = [
+    # 1. Localhost (Dành cho trình duyệt trên máy tính đang code)
+    "http://localhost:5173",    # Vite (React) mặc định
+    "http://127.0.0.1:5173",   
+    "http://localhost:3000",    # React cũ/Create React App
+    "http://127.0.0.1:3000",
+    "http://localhost:8080",    # Port phổ biến khác
+
+    # 2. Local IP (Quan trọng để test React Native hoặc điện thoại thật)
+    # Hãy thay bằng IP thực tế của máy bạn (Gõ 'ipconfig' hoặc 'ifconfig' để xem)
+    "http://192.168.1.2:5173",  
+    "http://192.168.1.10:5173", 
+    "http://10.0.2.2:8081",     # Android Emulator truy cập về localhost máy tính
+
+    # 3. Domain Production (Khi bạn đã deploy Web Admin lên host)
+    "https://se.cit.ctu.edu.vn",
+    "https://admin.yourdomain.com",
+
+    # 4. Mobile Apps (React Native)
+    # React Native trên Android/iOS không bị giới hạn bởi CORS như trình duyệt,
+    # nhưng thêm "null" đôi khi giúp fix lỗi trên một số trình giả lập web.
+    "null", 
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in origins if o],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.on_event("startup")
 def startup_event():
