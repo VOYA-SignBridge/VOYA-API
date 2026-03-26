@@ -119,7 +119,7 @@ class VideoUploadService:
 
         try:
             # 2. Xóa trên Cloudinary
-            print(f"🗑 Delete Cloudinary: {video.public_id}")
+            print(f" Delete Cloudinary: {video.public_id}")
             cloudinary.uploader.destroy(video.public_id, resource_type="video")
 
             # 3. Xóa trong DB
