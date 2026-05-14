@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
 from app.models.sign_video import DictionaryWord, WordVideo
-
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 class VideoRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -51,15 +52,13 @@ class VideoRepository:
     
 
 
-    def get_all_videos_with_details(self):
+    def get_videos_query(self):
         """
-        Lấy danh sách video kèm thông tin từ vựng (Word)
-        Sử dụng joinedload để tránh lỗi N+1 query
+        Trả về Query (Không gọi .all() để nhường việc phân trang cho Database)
         """
-        return self.db.query(WordVideo)\
+        return select(WordVideo)\
             .options(joinedload(WordVideo.word_rel))\
-            .order_by(WordVideo.id.desc())\
-            .all()
+            .order_by(WordVideo.id.desc())
 
     def get_video_by_id(self, video_id: int):
         return self.db.query(WordVideo).filter(WordVideo.id == video_id).first()

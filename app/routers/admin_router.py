@@ -1,12 +1,14 @@
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db 
+from app.repositories.publish_repo import PublishRepository
 from app.services.admin_service import VideoUploadService
 from app.services.publish_service import PublishService
 from app.core.exceptions import DataNotFoundError, CloudinaryUploadError, DatabaseOperationalError
 from app.schemas.api_response import PageResponse
 from app.schemas.sign_video_schema import VideoAdminFlatSchema
-from fastapi_pagination import  paginate
+from fastapi_pagination.ext.sqlalchemy import paginate
+from app.core.config import settings
 router = APIRouter(prefix="/admin", tags=["ADMIN SERVICE"])
 
 @router.post("/upload-video")
@@ -41,10 +43,8 @@ async def upload_video_endpoint(
 
 @router.get("/videos", response_model=PageResponse[VideoAdminFlatSchema])
 def get_videos_endpoint(db: Session = Depends(get_db)):
-    service = VideoUploadService(db)
-    # Router chỉ gọi 1 dòng, nhận về list đã format đẹp
-    videos =  service.get_list_videos_formatted()
-    return paginate(videos)
+        service = VideoUploadService(db)
+        return service.get_list_videos_formatted()
 
 @router.delete("/videos/{video_id}")
 def delete_video_endpoint(video_id: int, db: Session = Depends(get_db)):
@@ -91,3 +91,19 @@ def publish_dictionary_endpoint(region: str, db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail="Internal Server Error"
         )
+@router.get("/check-version/{region}")
+def check_dictionary_version(region: str, db: Session = Depends(get_db)):
+    repo = PublishRepository(db)
+        
+        # Lấy version từ DB (Rất nhẹ, truy vấn mất 1 mili-giây)
+    latest_version = repo.get_app_version(region)
+        
+        # URL file JSON mặc định trên Cloudinary
+        # (Đừng quên thay 'dnwwlugjr' bằng cloud name của bạn)
+    download_url = f"https://res.cloudinary.com/{settings.cloudinary_cloud_name}/raw/upload/v1/app_config/dictionary_{region}.json"
+
+    return {
+        "region": region,
+        "latest_version": latest_version,
+        "download_url": download_url
+    }

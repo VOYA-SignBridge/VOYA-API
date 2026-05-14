@@ -1,6 +1,6 @@
 import cloudinary.uploader
 from fastapi import UploadFile, HTTPException
-from fastapi_pagination import paginate
+from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 from slugify import slugify
@@ -11,6 +11,7 @@ from app.repositories.sign_video_repo import VideoRepository
 class VideoUploadService:
     def __init__(self, db: Session):
         self.repo = VideoRepository(db)
+        self.db = db
 
     def _generate_public_id(self, region: str, slug: str, version: str, variant: str) -> str:
         return f"sign_language/{region}/{slug}/{version}/{variant}/video"
@@ -71,31 +72,35 @@ class VideoUploadService:
             raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
     
 
+
     def get_list_videos_formatted(self):
-        """
-        Business Logic: Lấy dữ liệu DB -> Biến đổi thành JSON chuẩn cho Frontend
-        """
-        raw_videos = self.repo.get_all_videos_with_details()
+        query = self.repo.get_videos_query()
         
-        # Transform: Chuyển object SQLAlchemy thành List Dict
-        result = []
-        for v in raw_videos:
-            # Xử lý an toàn nếu word_rel bị null (dù hiếm)
-            word_info = v.word_rel
-            
-            result.append({
-                "id": v.id,
-                "word": word_info.word if word_info else "Unknown",
-                "slug": word_info.slug if word_info else "",
-                "region": word_info.region if word_info else "",
-                "topic": word_info.topics if word_info else [], # Trả về mảng topic
-                "variant": v.variant_id,
-                "version": v.version_str,
-                "public_id": v.public_id,
-                "preview_url": f"https://res.cloudinary.com/{settings.cloudinary_cloud_name}/video/upload/v{v.cloud_version}/{v.public_id}.mp4"
-            })
-            
-        return result
+        # 1. Khai báo một hàm nhào nặn dữ liệu (Transformer)
+        def my_transformer(items):
+            formatted_items = []
+            for row in items:
+                v = row[0] if isinstance(row, tuple) else row 
+                word_info = v.word_rel
+                
+                raw_topics = word_info.topics if word_info else ""
+                topic_str = raw_topics[0] if isinstance(raw_topics, list) and len(raw_topics) > 0 else (raw_topics if isinstance(raw_topics, str) else "")
+
+                formatted_items.append({
+                    "id": v.id,
+                    "word": word_info.word if word_info else "Unknown",
+                    "slug": word_info.slug if word_info else "",
+                    "region": word_info.region if word_info else "",
+                    "topic": topic_str,
+                    "variant": v.variant_id,
+                    "version": v.version_str,
+                    "public_id": v.public_id,
+                    "preview_url": f"https://res.cloudinary.com/{settings.cloudinary_cloud_name}/video/upload/v{v.cloud_version}/{v.public_id}.mp4"
+                })
+            return formatted_items
+
+        # 2. Gọi paginate và ném hàm transformer vào cho nó tự xử lý
+        return paginate(self.db, query, transformer=my_transformer)
 
 
     def get_admin_words_service(db: Session):

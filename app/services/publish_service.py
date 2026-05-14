@@ -24,12 +24,13 @@ class PublishService:
 
         # 3. Upload lên Cloudinary
         url = self._upload_json_to_cloud(region, final_package)
-
+        new_version = final_package["meta"]["version"]
+        self.repo.update_app_version(region, new_version)
         return {
             "status": "success",
             "region": region,
             "total_words": len(words),
-            "version": final_package["meta"]["version"],
+            "version": new_version,
             "url": url
         }
 
