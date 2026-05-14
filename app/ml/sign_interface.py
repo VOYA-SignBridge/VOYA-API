@@ -1,59 +1,87 @@
 from __future__ import annotations
+
 import json
+import os
+import pathlib
 from pathlib import Path
 from typing import List, Tuple
-import os
+
 import torch
 import torch.nn.functional as F
 
 from .tcn_classifier import TCNClassifier
-import pathlib   # 👈 thêm dòng này
 
-# đường dẫn tới checkpoint và json nhãn
-CKPT_PATH = Path("app/ai/tcn_classifier.pt")
-LABELS_PATH = Path("app/ai/tcn_labels.json")  
+APP_DIR = Path(__file__).resolve().parents[1]
+AI_DIR = APP_DIR / "ai"
+
+# Prefer the user-provided 6-class checkpoint, but fall back to compatible files.
+_CKPT_CANDIDATES = [
+    Path(os.getenv("TCN_MODEL_PATH", "")) if os.getenv("TCN_MODEL_PATH") else None,
+    AI_DIR / "tcn_dialect-hoa-de_20260514_214512.pt",
+]
+LABELS_PATH = Path(
+    os.getenv("TCN_LABELS_PATH", str(AI_DIR / "tcn_dialect-hoa-de_labels.json"))
+)
 
 
-def load_id2label(path: Path):
+def load_id2label(path: Path) -> dict[int, str]:
     with path.open("r", encoding="utf-8") as f:
         raw = json.load(f)
-    return {int(k): v for k, v in raw.items()}
+
+    if not raw:
+        return {}
+
+    _, sample_value = next(iter(raw.items()))
+    if isinstance(sample_value, int):
+        return {int(v): str(k) for k, v in raw.items()}
+
+    return {int(k): str(v) for k, v in raw.items()}
 
 
 ID2LABEL = load_id2label(LABELS_PATH)
 
 
+def resolve_ckpt_path() -> Path:
+    for candidate in _CKPT_CANDIDATES:
+        if candidate and candidate.exists():
+            return candidate
+    raise FileNotFoundError(
+        "No TCN checkpoint found. Checked: "
+        + ", ".join(str(p) for p in _CKPT_CANDIDATES if p is not None)
+    )
+
 
 def load_tcn_from_ckpt(device: str | None = None) -> TCNClassifier:
-    """Load TCN checkpoint bất kể train trên Windows hay Linux."""
+    """Load the configured TCN checkpoint on Windows or Linux."""
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    ckpt_path = resolve_ckpt_path()
 
-    # Lưu lại class gốc để restore
     orig_windows_path = pathlib.WindowsPath
     orig_posix_path = pathlib.PosixPath
 
     try:
         if os.name == "nt":
-            # 🟢 ĐANG CHẠY TRÊN WINDOWS
-            # Nếu checkpoint được save trên Linux → trong pickle có PosixPath
-            # → map PosixPath sang WindowsPath để unpickle được
-            pathlib.PosixPath = pathlib.WindowsPath  # type: ignore
+            pathlib.PosixPath = pathlib.WindowsPath  # type: ignore[assignment]
         else:
-            # 🟢 ĐANG CHẠY TRÊN LINUX/MAC
-            # Nếu checkpoint được save trên Windows → trong pickle có WindowsPath
-            # → map WindowsPath sang PosixPath
-            pathlib.WindowsPath = pathlib.PosixPath  # type: ignore
+            pathlib.WindowsPath = pathlib.PosixPath  # type: ignore[assignment]
 
-        ckpt = torch.load(str(CKPT_PATH), map_location=device)
-
+        ckpt = torch.load(str(ckpt_path), map_location=device)
     finally:
-        # Restore lại tránh side-effect cho chỗ khác
         pathlib.WindowsPath = orig_windows_path
         pathlib.PosixPath = orig_posix_path
 
-    in_dim: int = ckpt["in_dim"]
-    num_classes: int = ckpt["num_classes"]
-    cfg: dict = ckpt["config"]
+    if "model_state_dict" in ckpt:
+        state_dict = ckpt["model_state_dict"]
+        cfg: dict = ckpt["model_config"]
+        in_dim: int = ckpt["feature_dim"]
+        num_classes: int = ckpt["num_classes"]
+        id2label = ckpt.get("idx_to_label")
+    else:
+        state_dict = ckpt["model_state"]
+        cfg: dict = ckpt["config"]
+        in_dim: int = ckpt["in_dim"]
+        num_classes: int = ckpt["num_classes"]
+        id2label = ckpt.get("idx_to_label")
 
     model = TCNClassifier(
         in_dim=in_dim,
@@ -63,15 +91,20 @@ def load_tcn_from_ckpt(device: str | None = None) -> TCNClassifier:
         kernel_size=cfg["kernel_size"],
         dropout=cfg["dropout"],
     )
-    model.load_state_dict(ckpt["model_state"])
+    model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
+
+    # Prefer labels bundled with the checkpoint, otherwise keep the file-based fallback.
+    if isinstance(id2label, dict) and id2label:
+        global ID2LABEL
+        ID2LABEL = {int(k): str(v) for k, v in id2label.items()}
+
     return model
 
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# 👇 lazy-load model, tránh crash khi import module
 _TCN_MODEL: TCNClassifier | None = None
 
 
@@ -82,48 +115,20 @@ def get_tcn_model() -> TCNClassifier:
     return _TCN_MODEL
 
 
-
-# @torch.no_grad()
-# def predict_sign(frames: List[List[float]]) -> Tuple[str, float, List[float]]:
-#     if not frames:
-#         raise ValueError("Empty sequence")
-
-#     model = get_tcn_model()   # 👈 dùng model lazy-load
-
-#     x = torch.tensor(frames, dtype=torch.float32, device=DEVICE)  # [T, D]
-#     T_len, _ = x.shape
-
-#     x = x.unsqueeze(0)  # [1, T, D]
-#     lengths = torch.tensor([T_len], dtype=torch.long, device=DEVICE)
-
-#     logits = model(x, lengths)           # [1, num_classes]
-#     probs = F.softmax(logits, dim=-1)[0] # [num_classes]
-
-#     cls_id = int(torch.argmax(probs).item())
-#     prob = float(probs[cls_id].item())
-#     label = ID2LABEL.get(cls_id, str(cls_id))
-
-#     return label, prob, probs.tolist()
 @torch.no_grad()
 def predict_sign(frames: List[List[float]]) -> Tuple[str, float, List[float]]:
-    if len(frames) < 12:   # ví dụ: tối thiểu 12 frame mới predict
+    if len(frames) < 12:
         return "WAITING", 0.0, []
 
     model = get_tcn_model()
-    x = torch.tensor(frames, dtype=torch.float32, device=DEVICE)[-60:]  # lấy tối đa 48 frame gần nhất
-    T_len = x.shape[0]
+    x = torch.tensor(frames, dtype=torch.float32, device=DEVICE)[-60:]
+    t_len = x.shape[0]
 
     x = x.unsqueeze(0)
-    lengths = torch.tensor([T_len], device=DEVICE)
+    lengths = torch.tensor([t_len], device=DEVICE)
 
     logits = model(x, lengths)
     probs = F.softmax(logits, dim=-1)[0]
-
-    # Optional: EMA smoothing (nếu bạn giữ state giữa các request)
-    # global prev_probs
-    # if 'prev_probs' in globals():
-    #     probs = 0.6 * prev_probs + 0.4 * probs
-    # prev_probs = probs
 
     cls_id = int(probs.argmax())
     prob = float(probs[cls_id])
