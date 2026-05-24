@@ -5,7 +5,7 @@ import torch.nn as nn
 from typing import Any, Dict
 
 MODEL_PATH = os.path.join("app", "ai", "alphabets_model.pt")
-LABELS_PATH = os.path.join("app", "ai", "alphabet_labels.json")
+LABELS_PATH = os.path.join("app", "ai","label", "alphabet_labels.json")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
