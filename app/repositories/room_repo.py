@@ -128,39 +128,13 @@ class RoomRepository:
         self.db.commit()
         return room
 
-    def delete_room_with_participants(self, room_id: int):
-        participants = (
-            self.db.query(RoomParticipant)
-            .filter(RoomParticipant.room_id == room_id)
-            .all()
-        )
-        for participant in participants:
-            self.db.delete(participant)
-
-        room = self.db.query(Room).filter(Room.id == room_id).first()
-        if not room:
-            self.db.commit()
-            return None
-
-        self.db.delete(room)
-        self.db.commit()
-        return room
-
-    def list_expired_rooms_before(self, cutoff):
-        return (
+    def cleanup_expired_rooms(self, cutoff):
+        deleted_count = (
             self.db.query(Room)
             .filter(Room.expires_at.isnot(None), Room.expires_at <= cutoff)
-            .all()
+            .delete(synchronize_session=False)
         )
-
-    def cleanup_expired_rooms(self, cutoff):
-        expired_rooms = self.list_expired_rooms_before(cutoff)
-        deleted_count = 0
-
-        for room in expired_rooms:
-            self.delete_room_with_participants(room.id)
-            deleted_count += 1
-
+        self.db.commit()
         return deleted_count
 
     
