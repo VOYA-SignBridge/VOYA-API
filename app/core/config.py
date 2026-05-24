@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     cloudinary_api_key: str
     cloudinary_api_secret: str
     gemini_api_key: str
+    room_cleanup_retention_days: int = 7
+    room_cleanup_interval_hours: int = 24
     class Config:
         env_file = ".env",
         env_file_encoding = "utf-8"

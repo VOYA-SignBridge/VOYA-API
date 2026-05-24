@@ -7,6 +7,8 @@ from app.core.rate_limite_middleware import RateLimitMiddleware
 from app.routers import auth_router, room_router, room_ws_router, sign_video_router, ai_router, admin_router
 from app.db.database import engine, Base, get_db
 from app.core import exceptions
+from app.core.config import settings
+from app.services.room_cleanup_service import RoomCleanupService
 # from app.core.auth_middleware import AuthMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 # from app.utils.sign_cache import sign_cache
@@ -122,3 +124,18 @@ def root():
     """
 
 add_pagination(app)
+
+room_cleanup_service = RoomCleanupService(
+    retention_days=getattr(settings, "room_cleanup_retention_days", 7),
+    interval_hours=getattr(settings, "room_cleanup_interval_hours", 24),
+)
+
+
+@app.on_event("startup")
+def start_room_cleanup_job():
+    room_cleanup_service.start()
+
+
+@app.on_event("shutdown")
+def stop_room_cleanup_job():
+    room_cleanup_service.stop()
